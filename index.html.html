@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RegUBS — Regulação Ambulatorial</title>
+<style>
+  :root {
+    --verde: #0F6E56; --verde-claro: #E1F5EE; --verde-medio: #1D9E75;
+    --amarelo: #BA7517; --amarelo-claro: #FAEEDA; --amarelo-medio: #EF9F27;
+    --azul: #185FA5; --azul-claro: #E6F1FB; --azul-medio: #378ADD;
+    --vermelho: #A32D2D; --vermelho-claro: #FCEBEB; --vermelho-medio: #E24B4A;
+    --roxo: #534AB7; --roxo-claro: #EEEDFE; --roxo-medio: #7F77DD;
+    --cinza: #5F5E5A; --cinza-claro: #F1EFE8; --cinza-borda: #D3D1C7;
+    --texto: #1a1a1a; --texto-muted: #5F5E5A;
+    --bg: #ffffff; --bg-sec: #F8F8F6;
+    --borda: #D3D1C7;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-sec); color: var(--texto); font-size: 15px; line-height: 1.5; }
+
+  /* HEADER */
+  .header { background: var(--verde); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .header-logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-sub { font-size: 13px; opacity: 0.8; }
+  .header-user { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
+  .user-name { font-size: 13px; }
+  .user-setor { font-size: 11px; opacity: 0.75; }
+  .logout-btn { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+  /* LOGIN */
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #E1F5EE 0%, #F1EFE8 100%); padding: 20px; }
+  .login-card { background: #fff; border-radius: 16px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .login-title { font-size: 26px; font-weight: 700; color: var(--verde); margin-bottom: 4px; }
+  .login-sub { color: var(--texto-muted); font-size: 14px; margin-bottom: 32px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--texto-muted); margin-bottom: 6px; }
+  .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; background: var(--bg); }
+  .form-group input:focus, .form-group select:focus { border-color: var(--verde-medio); }
+  .btn-primary { width: 100%; padding: 12px; background: var(--verde); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .btn-primary:hover { background: var(--verde-medio); }
+  .usuarios-demo { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--borda); }
+  .demo-title { font-size: 12px; color: var(--texto-muted); margin-bottom: 10px; font-weight: 500; }
+  .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .login-setor-card { background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 16px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.15s; }
+  .login-setor-card:hover { border-color: var(--verde-medio); box-shadow: 0 2px 12px rgba(15,110,86,0.1); transform: translateY(-1px); }
+  .lsc-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .lsc-nome { font-size: 15px; font-weight: 600; }
+  .lsc-sub { font-size: 12px; color: var(--texto-muted); margin-top: 2px; }
+  .lsc-arrow { margin-left: auto; font-size: 22px; color: var(--cinza-borda); }
+
+  /* MAIN LAYOUT */
+  #app { display: none; }
+  .layout { display: flex; min-height: calc(100vh - 57px); }
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid var(--borda); padding: 16px 0; flex-shrink: 0; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; cursor: pointer; font-size: 14px; color: var(--texto-muted); transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--bg-sec); color: var(--texto); }
+  .nav-item.active { background: var(--verde-claro); color: var(--verde); font-weight: 500; border-left-color: var(--verde); }
+  .nav-icon { font-size: 18px; }
+  .nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--cinza); padding: 14px 18px 6px; font-weight: 500; }
+  .main { flex: 1; padding: 24px; overflow-y: auto; }
+
+  /* CARDS */
+  .card { background: #fff; border: 1px solid var(--borda); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 16px; font-weight: 600; }
+
+  /* PAGE TITLE */
+  .page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border: 1px solid var(--borda); border-radius: var(--radius); padding: 16px; }
+  .stat-label { font-size: 12px; color: var(--texto-muted); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-card.verde .stat-value { color: var(--verde); }
+  .stat-card.amarelo .stat-value { color: var(--amarelo); }
+  .stat-card.azul .stat-value { color: var(--azul); }
+  .stat-card.vermelho .stat-value { color: var(--vermelho); }
+  .stat-card.roxo .stat-value { color: var(--roxo); }
+
+  /* DATE PICKER */
+  .date-picker { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+  .date-picker .form-group { margin: 0; }
+  .date-picker select, .date-picker input { min-width: 110px; }
+  .btn-buscar { padding: 10px 20px; background: var(--verde); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .btn-buscar:hover { background: var(--verde-medio); }
+
+  /* TABLE */
+  .table-wrapper { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--bg-sec); padding: 10px 12px; text-align: left; font-weight: 500; color: var(--texto-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--borda); }
+  td { padding: 12px 12px; border-bottom: 1px solid var(--cinza-claro); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-sec); cursor: pointer; }
+
+  /* STATUS BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .badge-aguardando { background: var(--cinza-claro); color: var(--cinza); }
+  .badge-whatsapp { background: var(--verde-claro); color: var(--verde); }
+  .badge-recepcao { background: var(--azul-claro); color: var(--azul); }
+  .badge-retirado { background: #EAF3DE; color: #3B6D11; }
+  .badge-acs { background: var(--roxo-claro); color: var(--roxo); }
+  .badge-entregue { background: #EAF3DE; color: #27500A; }
+  .badge-recusa { background: var(--vermelho-claro); color: var(--vermelho); }
+  .badge-perda { background: var(--amarelo-claro); color: var(--amarelo); }
+
+  /* URGENCIA PRAZO */
+  .prazo-ok { color: #3B6D11; font-weight: 500; }
+  .prazo-atencao { color: var(--amarelo); font-weight: 500; }
+  .prazo-urgente { color: var(--vermelho); font-weight: 700; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--borda); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .modal-title { font-size: 17px; font-weight: 600; }
+  .modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--texto-muted); line-height: 1; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--borda); display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-sec { padding: 9px 18px; background: var(--bg-sec); border: 1px solid var(--borda); border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .btn-sec:hover { background: var(--cinza-claro); }
+  .btn-danger { padding: 9px 18px; background: var(--vermelho); color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+  /* TIMELINE */
+  .timeline { list-style: none; position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--borda); }
+  .timeline li { position: relative; padding: 0 0 18px 18px; }
+  .timeline li::before { content: ''; position: absolute; left: -13px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--verde); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--verde); }
+  .tl-meta { font-size: 12px; color: var(--texto-muted); margin-bottom: 2px; }
+  .tl-text { font-size: 14px; }
+
+  /* FORM NOVA VAGA */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-group select, .form-group input { width: 100%; padding: 9px 11px; border: 1px solid var(--borda); border-radius: 7px; font-size: 14px; outline: none; background: var(--bg); }
+  .form-group select:focus, .form-group input:focus { border-color: var(--verde-medio); }
+
+  /* SECTION TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg-sec); padding: 4px; border-radius: 9px; width: fit-content; }
+  .tab { padding: 7px 18px; border-radius: 7px; cursor: pointer; font-size: 14px; color: var(--texto-muted); transition: all 0.15s; }
+  .tab.active { background: #fff; color: var(--verde); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-bar input, .filter-bar select { padding: 8px 11px; border: 1px solid var(--borda); border-radius: 7px; font-size: 13px; background: var(--bg); outline: none; }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--verde-medio); }
+  .filter-bar input { min-width: 200px; }
+
+  /* SETOR BADGE */
+  .setor-esp { background: var(--verde-claro); color: var(--verde); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .setor-rec { background: var(--azul-claro); color: var(--azul); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .setor-acs { background: var(--roxo-claro); color: var(--roxo); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+
+  /* NOTIFY */
+  .notify { position: fixed; top: 70px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { background: #fff; border: 1px solid var(--borda); border-left: 4px solid var(--verde); border-radius: 8px; padding: 12px 16px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); animation: slideIn 0.25s ease; max-width: 300px; }
+  .toast.erro { border-left-color: var(--vermelho); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 48px 20px; color: var(--texto-muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; }
+
+  /* DASHBOARD CHART BARS */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-size: 12px; color: var(--texto-muted); width: 120px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--bg-sec); border-radius: 4px; height: 22px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 12px; font-weight: 500; color: #fff; transition: width 0.6s ease; }
+  .bar-fill.verde { background: var(--verde); }
+  .bar-fill.azul { background: var(--azul); }
+  .bar-fill.roxo { background: var(--roxo); }
+  .bar-fill.verde-m { background: var(--verde-medio); }
+  .bar-fill.vermelho { background: var(--vermelho); }
+  .bar-fill.amarelo { background: var(--amarelo); }
+
+  /* RESPONSIVE */
+  @media (max-width: 680px) {
+    .sidebar { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NOTIFY CONTAINER -->
+<div class="notify" id="notify"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div style="width:100%;max-width:500px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:30px;font-weight:700;color:var(--verde)">RegUBS</div>
+      <div style="color:var(--texto-muted);font-size:14px;margin-top:4px">Sistema de Regulação Ambulatorial</div>
+    </div>
+
+    <!-- Cards de acesso por setor -->
+    <div style="display:flex;flex-direction:column;gap:12px" id="setor-cards">
+      <div class="login-setor-card" onclick="selecionarSetor('especialidades')">
+        <div class="lsc-icon" style="background:var(--verde-claro);color:var(--verde)">📋</div>
+        <div><div class="lsc-nome">Especialidades</div><div class="lsc-sub">Cadastro e acompanhamento de vagas</div></div>
+        <div class="lsc-arrow">›</div>
+      </div>
+      <div class="login-setor-card" onclick="selecionarSetor('recepcao')">
+        <div class="lsc-icon" style="background:var(--azul-claro);color:var(--azul)">🏥</div>
+        <div><div class="lsc-nome">Recepção</div><div class="lsc-sub">Retirada de filipetas e confirmações</div></div>
+        <div class="lsc-arrow">›</div>
+      </div>
+      <div class="login-setor-card" onclick="selecionarSetor('acs')">
+        <div class="lsc-icon" style="background:var(--roxo-claro);color:var(--roxo)">🏘️</div>
+        <div><div class="lsc-nome">Agentes de Saúde (ACS)</div><div class="lsc-sub">Visitas domiciliares e entregas</div></div>
+        <div class="lsc-arrow">›</div>
+      </div>
+      <div class="login-setor-card" onclick="selecionarSetor('gestor')">
+        <div class="lsc-icon" style="background:var(--amarelo-claro);color:var(--amarelo)">📊</div>
+        <div><div class="lsc-nome">Gestão / Administrador</div><div class="lsc-sub">Acesso completo e relatórios</div></div>
+        <div class="lsc-arrow">›</div>
+      </div>
+    </div>
+
+    <!-- Tela de senha (oculta inicialmente) -->
+    <div id="senha-box" style="display:none">
+      <div class="login-card">
+        <button onclick="voltarSetores()" style="background:none;border:none;color:var(--verde);cursor:pointer;font-size:14px;margin-bottom:16px;padding:0">← Voltar</button>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+          <div id="senha-icon" class="lsc-icon" style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px"></div>
+          <div>
+            <div style="font-weight:600;font-size:16px" id="senha-setor-nome"></div>
+            <div style="font-size:12px;color:var(--texto-muted)" id="senha-setor-sub"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Senha de acesso</label>
+          <input type="password" id="input-senha" placeholder="Digite a senha do setor" onkeydown="if(event.key==='Enter')confirmarSenha()">
+        </div>
+        <div id="senha-erro" style="display:none;color:var(--vermelho);font-size:13px;margin-bottom:12px">Senha incorreta. Tente novamente.</div>
+        <button class="btn-primary" onclick="confirmarSenha()">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="header-logo">RegUBS</div>
+      <div class="header-sub">Regulação Ambulatorial</div>
+    </div>
+    <div class="header-user">
+      <div class="avatar" id="avatar-initials">AN</div>
+      <div>
+        <div class="user-name" id="user-display-name">Usuário</div>
+        <div class="user-setor" id="user-display-setor">Setor</div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sair</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" onclick="navTo('vagas')" data-page="vagas">
+        <span class="nav-icon">📋</span> Vagas do dia
+      </div>
+      <div class="nav-item" onclick="navTo('nova')" data-page="nova" id="nav-nova">
+        <span class="nav-icon">➕</span> Nova vaga
+      </div>
+      <div class="nav-item" onclick="navTo('dashboard')" data-page="dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-section">Consultas</div>
+      <div class="nav-item" onclick="navTo('busca')" data-page="busca">
+        <span class="nav-icon">🔍</span> Buscar paciente
+      </div>
+      <div class="nav-item" onclick="navTo('acs')" data-page="acs" id="nav-acs">
+        <span class="nav-icon">🏘️</span> Painel ACS
+      </div>
+    </div>
+    <div class="main" id="main-content"></div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE VAGA -->
+<div class="modal-overlay" id="modal-vaga">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-vaga-title">Detalhes da Vaga</div>
+      <button class="modal-close" onclick="fecharModal('modal-vaga')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-vaga-body"></div>
+    <div class="modal-footer" id="modal-vaga-footer"></div>
+  </div>
+</div>
+
+<!-- MODAL AÇÃO -->
+<div class="modal-overlay" id="modal-acao">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-acao-title">Registrar ação</div>
+      <button class="modal-close" onclick="fecharModal('modal-acao')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-acao-body"></div>
+    <div class="modal-footer" id="modal-acao-footer"></div>
+  </div>
+</div>
+
+<script>
+// ===== DADOS =====
+
+const ESPECIALIDADES = [
+  // Agenda Descentralizada - UBS (Anexo 1)
+  { grupo: 'Consultas — Agenda UBS', items: [
+    'Dermatologia','Oftalmologia','Ortopedia','Otorrinolaringologia',
+    'Urologia','Urologia - Vasectomia','Ginecologia - Planejamento Familiar'
+  ]},
+  { grupo: 'Exames — Agenda UBS', items: [
+    'Ecocardiografia Transtorácica','Eletroencefalograma em Vigília (EEG)',
+    'Endoscopia Digestiva Alta (EDA)','Mamografia Diagnóstica',
+    'Mamografia Bilateral para Rastreamento','RX Panorâmica (Odontologia)',
+    'RX Periapical (Odontologia)','Determinação de Curva Glicêmica (2 dosagens)',
+    'Determinação de Tempo de Coagulação',
+    'Determinação de Tempo de Atividade da Protrombina (TAP/RNI)',
+    'US Obstétrico','US Transvaginal',
+    'US (Segmentos) — Abdome Total','US (Segmentos) — Tireoide',
+    'US (Segmentos) — Mamas','US (Segmentos) — Rins e Vias Urinárias',
+    'US (Segmentos) — Pélvico','US (Segmentos) — Articular',
+    'RX (Segmentos) — Bacia','RX (Segmentos) — Coluna Lombar',
+    'RX (Segmentos) — Tórax','RX (Segmentos) — Membro Superior',
+    'RX (Segmentos) — Membro Inferior','RX (Segmentos) — Outros'
+  ]},
+  // Agenda Centralizada - DERAC (Anexo 3)
+  { grupo: 'Consultas — Agenda Centralizada (DERAC)', items: [
+    'Alergologia / Imunologia','Acompanhamento Paciente Transexualizador',
+    'Audiometria Tonal Limiar / Imitanciometria','Cirurgia Cabeça e Pescoço',
+    'Cirurgia Plástica','Cirurgia Torácica','Anestesiologia - Grupo de Dor',
+    'Fisioterapia - Geral','Fisioterapia - Incontinência Urinária',
+    'Fisioterapia Respiratória','Fisioterapia - Reabilitação Física Neurológica',
+    'Fonoaudiologia','Hematologia - Controle de Anticoagulação',
+    'Homeopatia','Infectologia - Hepatites Virais Crônicas e Agudas',
+    'Infectologia - Moléstias Infecciosas','Nutrição','Nutrição - Pediatria',
+    'Oftalmologia - Pediatria','Oftalmologia - Reflexo Vermelho',
+    'Odontologia - Endodontia Incisivo','Odontologia - Endodontia Molar',
+    'Odontologia - Disfunção de ATM','Odontologia - Periodontia',
+    'Odontologia - Prótese','Ortopedia Pediátrica','Reumatologia Pediátrica',
+    'Ginecologia - Avaliação de Laqueadura','Multidisciplinar - Reabilitação Intelectual',
+    'Multidisciplinar - Reabilitação Auditiva','Multidisciplinar - Reabilitação Física (CER)',
+    'Neuropsicologia - Avaliação','Terapia Ocupacional - Grupo Motor',
+    'Pediatria - Multidisciplinar (FENIX HMMG)'
+  ]},
+  { grupo: 'Exames — Agenda Centralizada (DERAC)', items: [
+    'Centro Cirúrgico Ambulatorial','Ecodopplercardiograma Fetal',
+    'Endoscopia Terapêutica (Hospitalar)','Espermograma',
+    'Prova de Função Pulmonar Completa (Espirometria)',
+    'Histerossalpingografia','RX Contrastado - Enema Opaco',
+    'Seriografia EED (Esofagograma)','Uretrocistografia',
+    'RX Contrastado de Urografia Excretora','US Doppler Carótidas e Vertebrais',
+    'US Doppler (Segmento Venoso/Arterial)','US Doppler Obstétrico',
+    'US Morfológico Obstétrico','US Transfontanela','Avaliação Urodinâmica Completa',
+    'BERA - Audiometria de Tronco Cerebral (PEA)',
+    'BERA com Sedação','Broncoscopia (Broncofibroscopia)',
+    'Holter 24 horas (3 canais)','MAPA - Monitorização Ambulatorial de Pressão Arterial',
+    'Nasofibrolaringoscopia','Determinação de Curva Glicêmica Clássica (5 Dosagens)',
+    'Dosagem de Paratormônio (PTH)','Dosagem de Adrenocorticotrófico (ACTH)',
+    'Gasometria','Teste de Processamento Auditivo','Emissões Otoacústicas - Teste da Orelhinha',
+    'Otoneurológico / Testes Vestibulares'
+  ]},
+  // Agenda Regulada (Anexo 4)
+  { grupo: 'Agenda Regulada — Especialidades', items: [
+    'Cardiologia','Cardiologia Pediátrica','Cirurgia Geral',
+    'Cirurgia do Aparelho Digestivo - Esôfago e Estômago',
+    'Cirurgia do Aparelho Digestivo - Pâncreas, Vesícula e Vias Biliares',
+    'Cirurgia Ginecológica (Ginecologia Cirúrgica)','Cirurgia Pediátrica',
+    'Cirurgia Vascular','Colonoscopia (Coloscopia)','Endocrinologia',
+    'Endocrinologia Pediátrica','Gastroclínica','Gastroenterologia Pediátrica',
+    'Hematologia','Hematologia Pediátrica','Histeroscopia','Mastologia',
+    'Mastologia - Cirurgia Ambulatorial','Nefrologia','Nefrologia Pediátrica',
+    'Neurocirurgia','Neurologia','Neurologia Pediátrica','Neurolologia Pediátrica',
+    'Odontologia - Pacientes Especiais','Odontologia - Estomatologia',
+    'Ginecologia - Colposcopia (Patologia Cervical)','Pneumologia',
+    'Pneumologia Pediátrica','Pré-Natal de Alto Risco','Proctologia',
+    'Reumatologia','Fisiatria - Reabilitação Física',
+    'Ortopedia - Coluna','Ortopedia - Joelho','Ortopedia - Mão',
+    'Ortopedia - Ombro','Ortopedia - Pé','Ortopedia - Quadril',
+    'Urologia - Cirurgia'
+  ]},
+  // Alta Complexidade (Anexo 5)
+  { grupo: 'Alta Complexidade', items: [
+    'Angiotomografia','Arteriografia Vascular','Arteriografia Neurocirurgia',
+    'Colangiopancreatografia Endoscópica (CPRE)','Litotripsia',
+    'Tomografia com Contraste (por segmento)','Tomografia sem Contraste (por segmento)',
+    'Tomografia com Sedação (infantil/adulto)','Tomografia Sobrepeso',
+    'Ressonância Magnética (por segmento)','Ressonância com Sedação',
+    'Ressonância Sobrepeso','Ressonância Mama','Ressonância Próstata',
+    'Ressonância Cardíaca','Angiotomografia Coronárias / Coração',
+    'Densitometria Óssea','Densitometria Óssea Sobrepeso',
+    'Ecocardiografia Transesofágico','Ecocardiograma de Estresse',
+    'Eletroneuromiografia','Cintilografias (por segmento)',
+    'Polissonografia','Tomografia de Coerência Ótica (OCT)',
+    'Cateterismo Cardíaco','Cardiologia - Cardioarritmia',
+    'Cirurgia Cardíaca Adulto','Cirurgia Cardíaca Pediátrica',
+    'Oncologia - Cabeça e Pescoço','Oncologia - Mastologia',
+    'Oncologia - Ginecologia','Oncologia - Tórax',
+    'Oncologia - Aparelho Digestivo','Oncologia - Proctologia',
+    'Oncologia - Neurocirurgia','Oncologia - Ortopedia',
+    'Oncologia - Urologia','Oncologia - Hematologia',
+    'Oncologia Clínica','Oncologia - Radioterapia',
+    'Oncologia - Iodoterapia','Oncologia - Oftalmologia',
+    'Oncologia - Dermato/Plástica','Tisiologia',
+    'Hemodiálise - Terapia Renal Substitutiva',
+    'Ambulatório de Genética Médica','Cirurgia Bariátrica',
+    'Ambulatório de Infertilidade','Ambulatório de Ginecologia Endócrino'
+  ]}
+];
+
+const EQUIPES = [
+  { id: 1, nome: 'Equipe 1', microareas: [
+    { id: '055', acs: 'Nathalie' }, { id: '039', acs: 'Nathalie' },
+    { id: '084', acs: 'Daniele' }, { id: '013', acs: 'Daniele' },
+    { id: '057', acs: 'Nathalie / Daniele' }, { id: '041', acs: 'Nathalie / Daniele' },
+    { id: '056', acs: 'Nathalie / Daniele' }, { id: '040', acs: 'Nathalie / Daniele' }
+  ]},
+  { id: 2, nome: 'Equipe 2', microareas: [
+    { id: '066', acs: 'Valter' }, { id: '065', acs: 'Valter' },
+    { id: '069', acs: 'Valter' }, { id: '067', acs: 'Valter' },
+    { id: '054', acs: 'Joacir' }, { id: '023', acs: 'Joacir' },
+    { id: '021', acs: 'Rogério' }, { id: '052', acs: 'Rogério' },
+    { id: '024', acs: 'Rogério' }, { id: '016', acs: 'Ercilia' },
+    { id: '017', acs: 'Ercilia' }
+  ]},
+  { id: 3, nome: 'Equipe 3', microareas: [
+    { id: '1435', acs: 'Margareth' }, { id: '931', acs: 'Margareth' },
+    { id: '1598', acs: 'Margareth' }, { id: '930', acs: 'Patricia' },
+    { id: '932', acs: 'Sandra' }, { id: '1436', acs: 'Sandra' },
+    { id: '053', acs: 'Sem agente' }, { id: '022', acs: 'Sem agente' },
+    { id: '059', acs: 'Sem agente' }
+  ]},
+  { id: 4, nome: 'Equipe 4', microareas: [
+    { id: '001', acs: 'Juliana' }, { id: '045', acs: 'Juliana' },
+    { id: '079', acs: 'Josirene' }, { id: '005', acs: 'Josirene' },
+    { id: '019', acs: 'Josirene' }, { id: '004', acs: 'Sem agente' },
+    { id: '003', acs: 'Sem agente' }, { id: '047', acs: 'Dulce' },
+    { id: '051', acs: 'Dulce' }, { id: '018', acs: 'Dulce' }
+  ]}
+];
+
+const STATUS_INFO = {
+  aguardando: { label: 'Aguardando contato', badge: 'badge-aguardando', emoji: '⏳' },
+  whatsapp: { label: 'Avisado por WhatsApp', badge: 'badge-whatsapp', emoji: '📱' },
+  recepcao: { label: 'Filipeta na Recepção', badge: 'badge-recepcao', emoji: '🏥' },
+  retirado: { label: 'Retirado pelo paciente', badge: 'badge-retirado', emoji: '✅' },
+  acs: { label: 'Encaminhado para ACS', badge: 'badge-acs', emoji: '🏘️' },
+  entregue: { label: 'Entregue pelo ACS', badge: 'badge-entregue', emoji: '🎯' },
+  recusa: { label: 'Recusa da vaga', badge: 'badge-recusa', emoji: '❌' },
+  perda: { label: 'Perda da vaga', badge: 'badge-perda', emoji: '⚠️' }
+};
+
+// DADOS DEMO
+let vagas = [
+  { id: 1, paciente: 'Maria das Dores Silva', cns: '700012345678901', tel1: '(19) 99123-4567', tel2: '', data_vaga: '2026-06-15', especialidade: 'Cardiologia', equipe: 2, microarea: '066', acs: 'Valter', endereco: 'Rua das Acácias, 123 - Jd. Primavera', status: 'recepcao', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-08 08:12', timeline: [
+    { data: '2026-06-08 08:12', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — Cardiologia em 15/06/2026' },
+    { data: '2026-06-08 09:05', usuario: 'Ana Silva (Especialidades)', acao: 'WhatsApp enviado para filha da paciente' },
+    { data: '2026-06-08 14:20', usuario: 'Carlos Mota (Recepção)', acao: 'Filipeta disponível na recepção' }
+  ]},
+  { id: 2, paciente: 'José Carlos Santos', cns: '700098765432100', tel1: '(19) 98456-7890', tel2: '(19) 3456-7890', data_vaga: '2026-06-17', especialidade: 'Colonoscopia (Coloscopia)', equipe: 1, microarea: '055', acs: 'Nathalie', endereco: 'Av. Central, 456 - Vila Nova', status: 'aguardando', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-08 10:30', timeline: [
+    { data: '2026-06-08 10:30', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — Colonoscopia em 17/06/2026' }
+  ]},
+  { id: 3, paciente: 'Ana Beatriz Costa', cns: '700011223344556', tel1: '(19) 97654-3210', tel2: '', data_vaga: '2026-06-20', especialidade: 'US (Segmentos) — Abdome Total', equipe: 3, microarea: '931', acs: 'Margareth', endereco: 'Rua das Flores, 78 - Jd. Esperança', status: 'acs', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-05 11:00', timeline: [
+    { data: '2026-06-05 11:00', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — US Abdome Total em 20/06/2026' },
+    { data: '2026-06-05 14:30', usuario: 'Ana Silva (Especialidades)', acao: 'Tentativa de contato — telefone não atende' },
+    { data: '2026-06-06 09:15', usuario: 'Carlos Mota (Recepção)', acao: 'Filipeta encaminhada para ACS' }
+  ]},
+  { id: 4, paciente: 'Pedro Henrique Lima', cns: '700055667788990', tel1: '(19) 96543-2109', tel2: '', data_vaga: '2026-06-12', especialidade: 'Neurologia', equipe: 4, microarea: '001', acs: 'Juliana', endereco: 'Rua Sem Saída, 10 - Bairro Sul', status: 'retirado', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-02 08:00', timeline: [
+    { data: '2026-06-02 08:00', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — Neurologia em 12/06/2026' },
+    { data: '2026-06-02 08:45', usuario: 'Ana Silva (Especialidades)', acao: 'Paciente avisado por WhatsApp' },
+    { data: '2026-06-03 11:00', usuario: 'Carlos Mota (Recepção)', acao: 'Filipeta disponível na recepção' },
+    { data: '2026-06-04 16:20', usuario: 'Carlos Mota (Recepção)', acao: 'Filipeta retirada pelo filho — Pedro Lima Jr.' }
+  ]},
+  { id: 5, paciente: 'Francisca Rodrigues', cns: '700099887766554', tel1: '(19) 95432-1098', tel2: '', data_vaga: '2026-06-10', especialidade: 'Mamografia Bilateral para Rastreamento', equipe: 2, microarea: '021', acs: 'Rogério', endereco: 'Rua das Palmeiras, 220 - Centro', status: 'recusa', recusa_motivo: 'Não deseja realizar o exame no momento', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-01 09:30', timeline: [
+    { data: '2026-06-01 09:30', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — Mamografia Rastreamento em 10/06/2026' },
+    { data: '2026-06-01 11:00', usuario: 'Ana Silva (Especialidades)', acao: 'WhatsApp enviado' },
+    { data: '2026-06-02 10:00', usuario: 'Carlos Mota (Recepção)', acao: 'Paciente recusou a vaga: Não deseja realizar o exame no momento' }
+  ]},
+  { id: 6, paciente: 'Antônio Ferreira Neto', cns: '700033445566778', tel1: '(19) 94321-0987', tel2: '', data_vaga: '2026-06-25', especialidade: 'Endocrinologia', equipe: 1, microarea: '084', acs: 'Daniele', endereco: 'Av. das Nações, 500 - Jd. América', status: 'whatsapp', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-08 11:45', timeline: [
+    { data: '2026-06-08 11:45', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — Endocrinologia em 25/06/2026' },
+    { data: '2026-06-08 14:00', usuario: 'Ana Silva (Especialidades)', acao: 'WhatsApp enviado para paciente' }
+  ]},
+  { id: 7, paciente: 'Luzia Aparecida Moura', cns: '700077889900112', tel1: '(19) 93210-9876', tel2: '', data_vaga: '2026-06-13', especialidade: 'Oftalmologia', equipe: 3, microarea: '1435', acs: 'Margareth', endereco: 'Rua das Orquídeas, 88 - Jd. Sul', status: 'entregue', cadastrado_por: 'Ana Silva', cadastrado_em: '2026-06-04 09:00', timeline: [
+    { data: '2026-06-04 09:00', usuario: 'Ana Silva (Especialidades)', acao: 'Vaga cadastrada — Oftalmologia em 13/06/2026' },
+    { data: '2026-06-04 10:00', usuario: 'Ana Silva (Especialidades)', acao: 'Tentativa sem sucesso, encaminhado para recepção' },
+    { data: '2026-06-05 08:00', usuario: 'Carlos Mota (Recepção)', acao: 'Filipeta encaminhada para ACS' },
+    { data: '2026-06-06 15:30', usuario: 'Maria Pereira (ACS)', acao: 'Filipeta entregue na visita domiciliar — paciente ciente' }
+  ]}
+];
+
+// ===== ESTADO =====
+let usuarioAtual = null;
+let paginaAtual = 'vagas';
+let vagaDetalheAtual = null;
+let filtroData = new Date().toISOString().slice(0,10);
+
+// ===== CREDENCIAIS FIXAS =====
+// Para alterar senhas: edite os valores 'senha' abaixo diretamente neste arquivo.
+const USUARIOS_FIXOS = {
+  especialidades: {
+    nome: 'Setor de Especialidades',
+    senha: 'esp2024',
+    setor: 'especialidades',
+    avatar: 'ES',
+    label: 'Especialidades',
+    icon: '📋',
+    iconBg: 'background:var(--verde-claro);color:var(--verde)',
+    sub: 'Cadastro e acompanhamento de vagas'
+  },
+  recepcao: {
+    nome: 'Recepção',
+    senha: 'rec2024',
+    setor: 'recepcao',
+    avatar: 'RE',
+    label: 'Recepção',
+    icon: '🏥',
+    iconBg: 'background:var(--azul-claro);color:var(--azul)',
+    sub: 'Retirada de filipetas e confirmações'
+  },
+  acs: {
+    nome: 'Agentes de Saúde',
+    senha: 'acs2024',
+    setor: 'acs',
+    avatar: 'AC',
+    label: 'ACS',
+    icon: '🏘️',
+    iconBg: 'background:var(--roxo-claro);color:var(--roxo)',
+    sub: 'Visitas domiciliares e entregas'
+  },
+  gestor: {
+    nome: 'Gestão',
+    senha: 'gest2024',
+    setor: 'gestor',
+    avatar: 'GE',
+    label: 'Gestão',
+    icon: '📊',
+    iconBg: 'background:var(--amarelo-claro);color:var(--amarelo)',
+    sub: 'Acesso completo e relatórios'
+  }
+};
+
+let setorSelecionado = null;
+
+function selecionarSetor(setor) {
+  setorSelecionado = setor;
+  const u = USUARIOS_FIXOS[setor];
+  document.getElementById('setor-cards').style.display = 'none';
+  document.getElementById('senha-box').style.display = 'block';
+  const icon = document.getElementById('senha-icon');
+  icon.textContent = u.icon;
+  icon.style.cssText = u.iconBg + ';width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0';
+  document.getElementById('senha-setor-nome').textContent = u.nome;
+  document.getElementById('senha-setor-sub').textContent = u.sub;
+  document.getElementById('input-senha').value = '';
+  document.getElementById('senha-erro').style.display = 'none';
+  setTimeout(() => document.getElementById('input-senha').focus(), 100);
+}
+
+function voltarSetores() {
+  document.getElementById('setor-cards').style.display = 'flex';
+  document.getElementById('senha-box').style.display = 'none';
+  setorSelecionado = null;
+}
+
+function confirmarSenha() {
+  const u = USUARIOS_FIXOS[setorSelecionado];
+  const digitada = document.getElementById('input-senha').value;
+  if (digitada !== u.senha) {
+    document.getElementById('senha-erro').style.display = 'block';
+    document.getElementById('input-senha').value = '';
+    document.getElementById('input-senha').focus();
+    return;
+  }
+  usuarioAtual = { nome: u.nome, setor: u.setor };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-display-name').textContent = u.nome;
+  document.getElementById('user-display-setor').textContent = u.label;
+  document.getElementById('avatar-initials').textContent = u.avatar;
+  ajustarMenuPorPerfil();
+  navTo('vagas');
+}
+
+function logout() {
+  usuarioAtual = null;
+  setorSelecionado = null;
+  voltarSetores();
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function ajustarMenuPorPerfil() {
+  const s = usuarioAtual.setor;
+  document.getElementById('nav-nova').style.display = (s === 'especialidades' || s === 'gestor') ? 'flex' : 'none';
+  document.getElementById('nav-acs').style.display = (s === 'acs' || s === 'gestor') ? 'flex' : 'none';
+}
+
+// ===== NAVEGAÇÃO =====
+function navTo(pagina) {
+  paginaAtual = pagina;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.querySelector(`[data-page="${pagina}"]`);
+  if (navEl) navEl.classList.add('active');
+  renderPagina(pagina);
+}
+
+function renderPagina(pagina) {
+  const el = document.getElementById('main-content');
+  if (pagina === 'vagas') el.innerHTML = renderVagas();
+  else if (pagina === 'nova') el.innerHTML = renderNovaVaga();
+  else if (pagina === 'dashboard') el.innerHTML = renderDashboard();
+  else if (pagina === 'busca') el.innerHTML = renderBusca();
+  else if (pagina === 'acs') el.innerHTML = renderACS();
+  attachListeners(pagina);
+}
+
+// ===== VAGAS DO DIA =====
+function renderVagas() {
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const anos = [anoAtual-1, anoAtual, anoAtual+1];
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const partes = filtroData.split('-');
+  const anoSel = partes[0], mesSel = partes[1], diaSel = partes[2];
+  const vagasDia = vagas.filter(v => v.data_vaga === filtroData);
+  
+  const counts = {};
+  Object.keys(STATUS_INFO).forEach(s => counts[s] = vagasDia.filter(v => v.status === s).length);
+  
+  return `
+    <div class="page-title">Vagas do dia</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Selecionar data</div></div>
+      <div class="date-picker">
+        <div class="form-group">
+          <label>Ano</label>
+          <select id="sel-ano">${anos.map(a=>`<option ${a==anoSel?'selected':''}>${a}</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+          <label>Mês</label>
+          <select id="sel-mes">${meses.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${String(i+1).padStart(2,'0')==mesSel?'selected':''}>${m}</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+          <label>Dia</label>
+          <input type="number" id="sel-dia" min="1" max="31" value="${parseInt(diaSel)}">
+        </div>
+        <button class="btn-buscar" onclick="buscarData()">Buscar vagas</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card cinza"><div class="stat-label">Total do dia</div><div class="stat-value" style="color:var(--cinza)">${vagasDia.length}</div></div>
+      <div class="stat-card verde"><div class="stat-label">Retiradas / Entregues</div><div class="stat-value">${counts.retirado + counts.entregue}</div></div>
+      <div class="stat-card azul"><div class="stat-label">Na Recepção</div><div class="stat-value">${counts.recepcao}</div></div>
+      <div class="stat-card roxo"><div class="stat-label">Com ACS</div><div class="stat-value">${counts.acs}</div></div>
+      <div class="stat-card amarelo"><div class="stat-label">Aguardando</div><div class="stat-value">${counts.aguardando + counts.whatsapp}</div></div>
+      <div class="stat-card vermelho"><div class="stat-label">Recusa / Perda</div><div class="stat-value">${counts.recusa + counts.perda}</div></div>
+    </div>
+    ${vagasDia.length === 0 ? `
+      <div class="card"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nenhuma vaga registrada para esta data.</div></div></div>
+    ` : `
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="filtro-nome" placeholder="🔍  Buscar paciente..." onkeyup="filtrarTabela()">
+        <select id="filtro-status" onchange="filtrarTabela()">
+          <option value="">Todos os status</option>
+          ${Object.entries(STATUS_INFO).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="table-wrapper">
+        <table id="tabela-vagas">
+          <thead><tr><th>Paciente</th><th>Especialidade / Exame</th><th>Equipe / ACS</th><th>Prazo</th><th>Status</th></tr></thead>
+          <tbody>
+            ${vagasDia.map(v => renderLinha(v)).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`}
+  `;
+}
+
+function renderLinha(v) {
+  const si = STATUS_INFO[v.status];
+  const dias = diasRestantes(v.data_vaga);
+  let prazoClass = 'prazo-ok', prazoTxt = `${dias}d`;
+  if (dias < 0) { prazoClass = 'prazo-urgente'; prazoTxt = 'Vencida'; }
+  else if (dias <= 2) { prazoClass = 'prazo-urgente'; prazoTxt = `${dias}d ⚠️`; }
+  else if (dias <= 5) { prazoClass = 'prazo-atencao'; prazoTxt = `${dias}d`; }
+  return `<tr onclick="abrirVaga(${v.id})">
+    <td><strong>${v.paciente}</strong><br><span style="font-size:12px;color:var(--texto-muted)">CNS: ${v.cns}</span></td>
+    <td style="font-size:13px">${v.especialidade}</td>
+    <td style="font-size:13px">Eq. ${v.equipe} — ${v.acs}<br><span style="font-size:11px;color:var(--texto-muted)">Microárea ${v.microarea}</span></td>
+    <td><span class="${prazoClass}">${prazoTxt}</span></td>
+    <td><span class="badge ${si.badge}">${si.emoji} ${si.label}</span></td>
+  </tr>`;
+}
+
+function buscarData() {
+  const a = document.getElementById('sel-ano').value;
+  const m = document.getElementById('sel-mes').value;
+  const d = String(parseInt(document.getElementById('sel-dia').value)).padStart(2,'0');
+  filtroData = `${a}-${m}-${d}`;
+  navTo('vagas');
+}
+
+function filtrarTabela() {
+  const nome = (document.getElementById('filtro-nome')?.value || '').toLowerCase();
+  const status = document.getElementById('filtro-status')?.value || '';
+  document.querySelectorAll('#tabela-vagas tbody tr').forEach(tr => {
+    const txt = tr.textContent.toLowerCase();
+    const statusOk = !status || tr.innerHTML.includes(`badge ${STATUS_INFO[status]?.badge}`);
+    tr.style.display = (txt.includes(nome) && statusOk) ? '' : 'none';
+  });
+}
+
+// ===== DETALHE VAGA =====
+function abrirVaga(id) {
+  const v = vagas.find(x => x.id === id);
+  if (!v) return;
+  vagaDetalheAtual = v;
+  const si = STATUS_INFO[v.status];
+  document.getElementById('modal-vaga-title').textContent = `${v.paciente}`;
+  document.getElementById('modal-vaga-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <div><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">Especialidade / Exame</div><div style="font-weight:500">${v.especialidade}</div></div>
+      <div><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">Data da consulta</div><div style="font-weight:500">${formatDate(v.data_vaga)}</div></div>
+      <div><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">CNS</div><div>${v.cns}</div></div>
+      <div><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">Telefone</div><div>${v.tel1}${v.tel2 ? ' / '+v.tel2 : ''}</div></div>
+      <div><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">Equipe / Microárea</div><div>Equipe ${v.equipe} — Microárea ${v.microarea}</div></div>
+      <div><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">ACS responsável</div><div style="font-weight:500">${v.acs}</div></div>
+      <div class="full"><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">Endereço</div><div>${v.endereco}</div></div>
+      <div class="full"><div style="font-size:12px;color:var(--texto-muted);margin-bottom:3px">Status atual</div><span class="badge ${si.badge}">${si.emoji} ${si.label}</span>${v.recusa_motivo ? `<span style="font-size:12px;color:var(--texto-muted);margin-left:8px">${v.recusa_motivo}</span>` : ''}</div>
+    </div>
+    <div style="border-top:1px solid var(--borda);padding-top:16px;margin-bottom:4px">
+      <div style="font-weight:500;margin-bottom:12px">Linha do tempo</div>
+      <ul class="timeline">
+        ${v.timeline.map(t=>`<li><div class="tl-meta">${t.data} — <strong>${t.usuario}</strong></div><div class="tl-text">${t.acao}</div></li>`).join('')}
+      </ul>
+    </div>
+  `;
+  const botoes = gerarBotoesAcao(v);
+  document.getElementById('modal-vaga-footer').innerHTML = `<button class="btn-sec" onclick="fecharModal('modal-vaga')">Fechar</button>${botoes}`;
+  document.getElementById('modal-vaga').classList.add('open');
+}
+
+function gerarBotoesAcao(v) {
+  const s = usuarioAtual.setor;
+  const status = v.status;
+  let btns = '';
+  if (s === 'especialidades' || s === 'gestor') {
+    if (status === 'aguardando') btns += `<button class="btn-primary" onclick="abrirAcao('whatsapp')">📱 Registrar WhatsApp</button>`;
+    if (status === 'whatsapp') btns += `<button class="btn-primary" onclick="abrirAcao('recepcao')">🏥 Filipeta na Recepção</button>`;
+  }
+  if (s === 'recepcao' || s === 'gestor') {
+    if (status === 'recepcao') {
+      btns += `<button class="btn-primary" onclick="abrirAcao('retirado')">✅ Confirmar retirada</button>`;
+      btns += `<button class="btn-sec" onclick="abrirAcao('acs')">🏘️ Encaminhar para ACS</button>`;
+    }
+    if (status === 'recepcao' || status === 'whatsapp' || status === 'aguardando') {
+      btns += `<button class="btn-danger" onclick="abrirAcao('recusa')">❌ Registrar recusa</button>`;
+    }
+  }
+  if (s === 'acs' || s === 'gestor') {
+    if (status === 'acs') btns += `<button class="btn-primary" onclick="abrirAcao('entregue')">🎯 Registrar entrega</button>`;
+  }
+  if ((s === 'especialidades' || s === 'gestor') && !['retirado','entregue','recusa'].includes(status)) {
+    btns += `<button class="btn-danger" onclick="abrirAcao('perda')">⚠️ Perda de vaga</button>`;
+  }
+  return btns;
+}
+
+function abrirAcao(tipo) {
+  fecharModal('modal-vaga');
+  const v = vagaDetalheAtual;
+  const titulos = { whatsapp:'Registrar contato WhatsApp', recepcao:'Filipeta na Recepção', retirado:'Confirmar retirada', acs:'Encaminhar para ACS', entregue:'Registrar entrega pelo ACS', recusa:'Registrar recusa', perda:'Registrar perda de vaga' };
+  document.getElementById('modal-acao-title').textContent = titulos[tipo];
+  let body = `<div style="margin-bottom:14px;padding:12px;background:var(--bg-sec);border-radius:8px"><strong>${v.paciente}</strong> — ${v.especialidade}<br><span style="font-size:13px;color:var(--texto-muted)">${formatDate(v.data_vaga)}</span></div>`;
+  
+  if (tipo === 'whatsapp') body += `<div class="form-group"><label>Observação (quem atendeu / número)</label><input type="text" id="obs-acao" placeholder="Ex: Atendeu a filha, número (19) 99..."></div>`;
+  if (tipo === 'retirado') body += `<div class="form-group"><label>Nome de quem retirou</label><input type="text" id="obs-acao" placeholder="Nome completo"><div style="height:10px"></div><label>Grau de parentesco</label><select id="obs2-acao"><option>Próprio paciente</option><option>Filho(a)</option><option>Cônjuge</option><option>Pai/Mãe</option><option>Irmão/Irmã</option><option>Outro</option></select></div>`;
+  if (tipo === 'recusa') body += `<div class="form-group"><label>Motivo da recusa</label><select id="obs-acao"><option>Não deseja realizar</option><option>Mudou de cidade</option><option>Já realizou o exame/consulta</option><option>Problema de saúde no momento</option><option>Motivo de transporte / acesso</option><option>Outros</option></select></div>`;
+  if (tipo === 'entregue') body += `<div class="form-group"><label>Observação da visita domiciliar</label><input type="text" id="obs-acao" placeholder="Ex: Paciente estava em casa, recebeu a filipeta"></div>`;
+  if (tipo === 'perda') body += `<div class="form-group"><label>Motivo da perda</label><select id="obs-acao"><option>Paciente não localizado</option><option>Prazo vencido</option><option>Número inexistente</option><option>Outros</option></select></div>`;
+  if (tipo === 'acs') body += `<p style="font-size:14px;color:var(--texto-muted)">A filipeta será encaminhada para <strong>${v.acs}</strong> (Equipe ${v.equipe} — Microárea ${v.microarea}).</p>`;
+  if (tipo === 'recepcao') body += `<p style="font-size:14px;color:var(--texto-muted)">Confirma que a filipeta já foi impressa e está disponível na recepção?</p>`;
+  
+  document.getElementById('modal-acao-body').innerHTML = body;
+  document.getElementById('modal-acao-footer').innerHTML = `
+    <button class="btn-sec" onclick="fecharModal('modal-acao')">Cancelar</button>
+    <button class="btn-primary" onclick="confirmarAcao('${tipo}')">Confirmar</button>
+  `;
+  document.getElementById('modal-acao').classList.add('open');
+}
+
+function confirmarAcao(tipo) {
+  const v = vagaDetalheAtual;
+  const obs = document.getElementById('obs-acao')?.value || '';
+  const obs2 = document.getElementById('obs2-acao')?.value || '';
+  const agora = new Date().toLocaleString('pt-BR').replace(',','');
+  const statusMap = { whatsapp:'whatsapp', recepcao:'recepcao', retirado:'retirado', acs:'acs', entregue:'entregue', recusa:'recusa', perda:'perda' };
+  const acoesMap = {
+    whatsapp: `WhatsApp enviado${obs ? ' — '+obs : ''}`,
+    recepcao: 'Filipeta disponível na recepção',
+    retirado: `Filipeta retirada por ${obs}${obs2 ? ' ('+obs2+')' : ''}`,
+    acs: `Filipeta encaminhada para ACS ${v.acs} (Microárea ${v.microarea})`,
+    entregue: `Entregue na visita domiciliar${obs ? ' — '+obs : ''}`,
+    recusa: `Vaga recusada — ${obs}`,
+    perda: `Perda de vaga — ${obs}`
+  };
+  v.status = statusMap[tipo];
+  if (tipo === 'recusa') v.recusa_motivo = obs;
+  v.timeline.push({ data: agora, usuario: `${usuarioAtual.nome} (${usuarioAtual.setor})`, acao: acoesMap[tipo] });
+  fecharModal('modal-acao');
+  toast('Status atualizado com sucesso!');
+  navTo('vagas');
+}
+
+// ===== NOVA VAGA =====
+function renderNovaVaga() {
+  const optsEsp = ESPECIALIDADES.map(g => `<optgroup label="${g.grupo}">${g.items.map(i=>`<option>${i}</option>`).join('')}</optgroup>`).join('');
+  const optsEquipes = EQUIPES.map(e => `<option value="${e.id}">Equipe ${e.id}</option>`).join('');
+  return `
+    <div class="page-title">Cadastrar nova vaga</div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group full"><label>Nome do paciente *</label><input type="text" id="nv-nome" placeholder="Nome completo"></div>
+        <div class="form-group"><label>CNS (Cartão SUS) *</label><input type="text" id="nv-cns" placeholder="000 0000 0000 0000"></div>
+        <div class="form-group"><label>Telefone principal *</label><input type="text" id="nv-tel1" placeholder="(19) 99999-9999"></div>
+        <div class="form-group"><label>Telefone 2 (opcional)</label><input type="text" id="nv-tel2" placeholder="(19) 99999-9999"></div>
+        <div class="form-group"><label>Data da consulta / exame *</label><input type="date" id="nv-data"></div>
+        <div class="form-group full"><label>Especialidade / Exame *</label><select id="nv-esp"><option value="">— Selecione —</option>${optsEsp}</select></div>
+        <div class="form-group"><label>Equipe ESF *</label><select id="nv-equipe" onchange="carregarMicroareas()">${optsEquipes}</select></div>
+        <div class="form-group"><label>Microárea *</label><select id="nv-micro" onchange="autoACS()"><option value="">— Selecione a equipe primeiro —</option></select></div>
+        <div class="form-group"><label>ACS responsável</label><input type="text" id="nv-acs" placeholder="Preenchido automaticamente" readonly style="background:var(--bg-sec);color:var(--texto-muted)"></div>
+        <div class="form-group full"><label>Endereço do paciente *</label><input type="text" id="nv-end" placeholder="Rua, número, bairro"></div>
+        <div class="form-group full"><label>Observações</label><input type="text" id="nv-obs" placeholder="Informações adicionais relevantes"></div>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-sec" onclick="navTo('vagas')">Cancelar</button>
+        <button class="btn-primary" onclick="salvarVaga()">💾 Cadastrar vaga</button>
+      </div>
+    </div>
+  `;
+}
+
+function attachListeners(pagina) {
+  if (pagina === 'nova') {
+    setTimeout(() => {
+      carregarMicroareas();
+      const hoje = new Date().toISOString().slice(0,10);
+      document.getElementById('nv-data').value = hoje;
+    }, 50);
+  }
+}
+
+function carregarMicroareas() {
+  const eq = parseInt(document.getElementById('nv-equipe')?.value);
+  const equipe = EQUIPES.find(e => e.id === eq);
+  const sel = document.getElementById('nv-micro');
+  if (!sel) return;
+  sel.innerHTML = equipe ? equipe.microareas.map(m => `<option value="${m.id}" data-acs="${m.acs}">Microárea ${m.id} — ${m.acs}</option>`).join('') : '<option>— Selecione a equipe —</option>';
+  autoACS();
+}
+
+function autoACS() {
+  const sel = document.getElementById('nv-micro');
+  const acsInput = document.getElementById('nv-acs');
+  if (!sel || !acsInput) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.acs) acsInput.value = opt.dataset.acs;
+}
+
+function salvarVaga() {
+  const campos = { nome: '#nv-nome', cns: '#nv-cns', tel1: '#nv-tel1', data: '#nv-data', esp: '#nv-esp', micro: '#nv-micro', end: '#nv-end' };
+  for (const [k, sel] of Object.entries(campos)) {
+    if (!document.querySelector(sel)?.value) { toast(`Preencha todos os campos obrigatórios (*).`, true); return; }
+  }
+  const micro = document.getElementById('nv-micro');
+  const eq = parseInt(document.getElementById('nv-equipe').value);
+  const microId = micro.value;
+  const acsNome = document.getElementById('nv-acs').value;
+  const agora = new Date().toLocaleString('pt-BR').replace(',','');
+  const novaVaga = {
+    id: Date.now(), paciente: document.getElementById('nv-nome').value,
+    cns: document.getElementById('nv-cns').value, tel1: document.getElementById('nv-tel1').value,
+    tel2: document.getElementById('nv-tel2').value, data_vaga: document.getElementById('nv-data').value,
+    especialidade: document.getElementById('nv-esp').value, equipe: eq, microarea: microId,
+    acs: acsNome, endereco: document.getElementById('nv-end').value,
+    status: 'aguardando', cadastrado_por: usuarioAtual.nome, cadastrado_em: agora,
+    timeline: [{ data: agora, usuario: `${usuarioAtual.nome} (Especialidades)`, acao: `Vaga cadastrada — ${document.getElementById('nv-esp').value} em ${formatDate(document.getElementById('nv-data').value)}` }]
+  };
+  vagas.push(novaVaga);
+  filtroData = novaVaga.data_vaga;
+  toast('Vaga cadastrada com sucesso!');
+  navTo('vagas');
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const total = vagas.length;
+  const counts = {};
+  Object.keys(STATUS_INFO).forEach(s => counts[s] = vagas.filter(v=>v.status===s).length);
+  const concluidos = counts.retirado + counts.entregue;
+  const pct = total ? Math.round(concluidos/total*100) : 0;
+  return `
+    <div class="page-title">Dashboard — Indicadores</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total de vagas (período)</div><div class="stat-value" style="color:var(--cinza)">${total}</div></div>
+      <div class="stat-card verde"><div class="stat-label">Resolvidas</div><div class="stat-value">${concluidos}</div></div>
+      <div class="stat-card azul"><div class="stat-label">Na Recepção</div><div class="stat-value">${counts.recepcao}</div></div>
+      <div class="stat-card roxo"><div class="stat-label">Com ACS</div><div class="stat-value">${counts.acs}</div></div>
+      <div class="stat-card vermelho"><div class="stat-label">Recusas</div><div class="stat-value">${counts.recusa}</div></div>
+      <div class="stat-card amarelo"><div class="stat-label">Perdas</div><div class="stat-value">${counts.perda}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">Distribuição por status</div>
+        <div class="bar-chart">
+          ${Object.entries(STATUS_INFO).map(([k,v]) => {
+            const n = counts[k] || 0;
+            const w = total ? Math.round(n/total*100) : 0;
+            const cores = {aguardando:'cinza',whatsapp:'verde-m',recepcao:'azul',retirado:'verde',acs:'roxo',entregue:'verde',recusa:'vermelho',perda:'amarelo'};
+            return `<div class="bar-row"><div class="bar-label">${v.emoji} ${v.label.split(' ').slice(0,2).join(' ')}</div><div class="bar-track"><div class="bar-fill ${cores[k]}" style="width:${Math.max(w,n?8:0)}%">${n}</div></div></div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">Por equipe ESF</div>
+        <div class="bar-chart">
+          ${EQUIPES.map(eq => {
+            const n = vagas.filter(v=>v.equipe===eq.id).length;
+            const w = total ? Math.round(n/total*100) : 0;
+            const cores = ['verde','azul','roxo','vermelho'];
+            return `<div class="bar-row"><div class="bar-label">${eq.nome}</div><div class="bar-track"><div class="bar-fill ${cores[eq.id-1]}" style="width:${Math.max(w,n?8:0)}%">${n}</div></div></div>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--borda);padding-top:14px">
+          <div style="font-size:13px;color:var(--texto-muted);margin-bottom:6px">Taxa de resolução geral</div>
+          <div style="font-size:22px;font-weight:700;color:var(--verde)">${pct}%</div>
+          <div style="font-size:12px;color:var(--texto-muted)">${concluidos} de ${total} vagas resolvidas</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== BUSCA =====
+function renderBusca() {
+  return `
+    <div class="page-title">Buscar paciente</div>
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="busca-global" placeholder="🔍  Nome, CNS ou especialidade..." oninput="buscarGlobal()" style="min-width:280px">
+        <select id="busca-status" onchange="buscarGlobal()">
+          <option value="">Todos os status</option>
+          ${Object.entries(STATUS_INFO).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('')}
+        </select>
+        <select id="busca-equipe" onchange="buscarGlobal()">
+          <option value="">Todas as equipes</option>
+          ${EQUIPES.map(e=>`<option value="${e.id}">Equipe ${e.id}</option>`).join('')}
+        </select>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Paciente</th><th>Especialidade</th><th>Data vaga</th><th>ACS / Equipe</th><th>Status</th></tr></thead>
+          <tbody id="busca-tbody">
+            ${vagas.map(v => {
+              const si = STATUS_INFO[v.status];
+              return `<tr onclick="abrirVaga(${v.id})" style="cursor:pointer">
+                <td><strong>${v.paciente}</strong><br><span style="font-size:12px;color:var(--texto-muted)">${v.cns}</span></td>
+                <td style="font-size:13px">${v.especialidade}</td>
+                <td style="font-size:13px">${formatDate(v.data_vaga)}</td>
+                <td style="font-size:13px">${v.acs}<br><span style="font-size:11px;color:var(--texto-muted)">Eq.${v.equipe} — Micro.${v.microarea}</span></td>
+                <td><span class="badge ${si.badge}">${si.emoji} ${si.label}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function buscarGlobal() {
+  const txt = (document.getElementById('busca-global')?.value || '').toLowerCase();
+  const status = document.getElementById('busca-status')?.value || '';
+  const equipe = document.getElementById('busca-equipe')?.value || '';
+  document.querySelectorAll('#busca-tbody tr').forEach(tr => {
+    const texto = tr.textContent.toLowerCase();
+    const statusOk = !status || tr.innerHTML.includes(STATUS_INFO[status]?.badge);
+    const equipeOk = !equipe || vagas.find(v => v.id && tr.innerHTML.includes(v.cns) && String(v.equipe) === equipe);
+    tr.style.display = (texto.includes(txt) && statusOk) ? '' : 'none';
+  });
+}
+
+// ===== PAINEL ACS =====
+function renderACS() {
+  let acsNome = usuarioAtual.setor === 'acs' ? usuarioAtual.nome.split(' ')[0] : null;
+  const pendentes = vagas.filter(v => v.status === 'acs' && (!acsNome || v.acs.toLowerCase().includes(acsNome.toLowerCase())));
+  return `
+    <div class="page-title">Painel dos Agentes de Saúde</div>
+    ${pendentes.length === 0 ? `<div class="card"><div class="empty"><div class="empty-icon">🏘️</div><div class="empty-text">Nenhuma filipeta pendente para entrega no momento.</div></div></div>` : ''}
+    ${pendentes.length > 0 ? `
+    <div class="card">
+      <div class="card-header"><div class="card-title">📋 Filipetas para entrega (${pendentes.length})</div></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Paciente</th><th>Endereço</th><th>Especialidade</th><th>Data consulta</th><th>Prazo</th><th>Ação</th></tr></thead>
+          <tbody>
+            ${pendentes.map(v => {
+              const dias = diasRestantes(v.data_vaga);
+              let pClass = dias <= 2 ? 'prazo-urgente' : dias <= 5 ? 'prazo-atencao' : 'prazo-ok';
+              return `<tr>
+                <td><strong>${v.paciente}</strong><br><span style="font-size:12px;color:var(--texto-muted)">${v.tel1}</span></td>
+                <td style="font-size:13px">${v.endereco}</td>
+                <td style="font-size:13px">${v.especialidade}</td>
+                <td style="font-size:13px">${formatDate(v.data_vaga)}</td>
+                <td><span class="${pClass}">${dias < 0 ? 'Vencida' : dias+'d'}</span></td>
+                <td><button class="btn-primary" style="font-size:12px;padding:6px 12px" onclick="vagaDetalheAtual=vagas.find(x=>x.id===${v.id});abrirAcao('entregue')">Registrar entrega</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
+    <div class="card">
+      <div class="card-header"><div class="card-title">📊 Resumo por microárea (Equipe ${usuarioAtual.setor === 'acs' ? '— Minha área' : '— Todas'})</div></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Equipe</th><th>Microárea</th><th>ACS</th><th>Pendentes</th><th>Entregues</th></tr></thead>
+          <tbody>
+            ${EQUIPES.flatMap(eq => eq.microareas.map(m => {
+              const pend = vagas.filter(v=>v.equipe===eq.id && v.microarea===m.id && v.status==='acs').length;
+              const entr = vagas.filter(v=>v.equipe===eq.id && v.microarea===m.id && v.status==='entregue').length;
+              return `<tr><td>Equipe ${eq.id}</td><td>Microárea ${m.id}</td><td>${m.acs}</td><td>${pend > 0 ? `<span class="badge badge-acs">${pend}</span>` : '—'}</td><td>${entr > 0 ? `<span class="badge badge-entregue">${entr}</span>` : '—'}</td></tr>`;
+            })).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ===== UTILS =====
+function diasRestantes(dataStr) {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const data = new Date(dataStr+'T00:00:00');
+  return Math.round((data - hoje) / 86400000);
+}
+function formatDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+function toast(msg, erro=false) {
+  const div = document.createElement('div');
+  div.className = 'toast' + (erro ? ' erro' : '');
+  div.textContent = msg;
+  document.getElementById('notify').appendChild(div);
+  setTimeout(() => div.remove(), 3500);
+}
+
+// Fechar modal clicando fora
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
